@@ -14,7 +14,8 @@ Vite+ manages the Node.js runtime and pnpm version for this project.
 The WASM bindings are published to GitHub Packages as `@packtrans/glossary`. Create a GitHub personal access token with `read:packages` and authenticate before installing:
 
 ```sh
-export NODE_AUTH_TOKEN=ghp_...
+export GITHUB_NPM_AUTH_TOKEN=ghp_...
+pnpm config set //npm.pkg.github.com/:_authToken "$GITHUB_NPM_AUTH_TOKEN"
 vp install
 ```
 
@@ -51,13 +52,26 @@ Local dev uses `http://localhost:5173` (Vite `server.host`) so the browser origi
 
 The app is a static SPA deployed with the [Cloudflare Vite plugin](https://developers.cloudflare.com/workers/vite-plugin/). Input configuration is in `wrangler.toml`; `vp build` emits client assets and an output `wrangler.json` under `dist/` for preview and deploy.
 
+### Manual deploy via GitHub Actions
+
+Use the [Deploy to Cloudflare Workers](.github/workflows/deploy.yml) workflow (`workflow_dispatch`) to build and deploy from GitHub Actions with [wrangler-action](https://github.com/cloudflare/wrangler-action).
+
+Repository secrets:
+
+- `CLOUDFLARE_API_TOKEN` — Cloudflare API token with Workers edit permission
+- `CLOUDFLARE_ACCOUNT_ID` — Cloudflare account ID
+
+The workflow uses `GITHUB_TOKEN` to install `@packtrans/glossary` from GitHub Packages (`packages: read` permission).
+
+Run it from **Actions → Deploy to Cloudflare Workers → Run workflow**.
+
+### Local deploy
+
 After `wrangler login`:
 
 ```sh
 vp run deploy
 ```
-
-Or connect this repository in the [Cloudflare dashboard](https://dash.cloudflare.com/) and let Cloudflare build and deploy on push. Set `NODE_AUTH_TOKEN` as a build environment variable so install can fetch `@packtrans/glossary` from GitHub Packages.
 
 Requirements: Wrangler **4.102.0+** (included as a dev dependency).
 
