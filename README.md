@@ -14,7 +14,7 @@ Vite+ manages the Node.js runtime and pnpm version for this project.
 The WASM bindings are published to GitHub Packages as `@packtrans/glossary`. Create a GitHub personal access token with `read:packages` and authenticate before installing:
 
 ```sh
-export NODE_AUTH_TOKEN=ghp_...
+export GITHUB_NPM_AUTH_TOKEN=ghp_...
 vp install
 ```
 
@@ -57,7 +57,7 @@ After `wrangler login`:
 vp run deploy
 ```
 
-Or connect this repository in the [Cloudflare dashboard](https://dash.cloudflare.com/) and let Cloudflare build and deploy on push. Set `NODE_AUTH_TOKEN` as a build environment variable so install can fetch `@packtrans/glossary` from GitHub Packages.
+Or connect this repository in the [Cloudflare dashboard](https://dash.cloudflare.com/) and let Cloudflare build and deploy on push. Set `GITHUB_NPM_AUTH_TOKEN` as a build environment variable so install can fetch `@packtrans/glossary` from GitHub Packages (see `.npmrc`).
 
 Requirements: Wrangler **4.102.0+** (included as a dev dependency).
 
