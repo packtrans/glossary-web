@@ -11,7 +11,7 @@ type SearchFormProps = {
 };
 
 const MIN_LIMIT = 1;
-const MAX_LIMIT = 50;
+const MAX_LIMIT = 100;
 const DEFAULT_LIMIT = 10;
 
 function clampLimit(value: number): number {
