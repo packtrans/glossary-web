@@ -15,10 +15,8 @@ The WASM bindings are published to GitHub Packages as `@packtrans/glossary`. Cre
 
 ```sh
 export NODE_AUTH_TOKEN=ghp_...
-pnpm install
+vp install
 ```
-
-In CI, use `GITHUB_TOKEN` with `packages: read` permission (see `.github/workflows/deploy.yml`).
 
 ## Commands
 
@@ -53,11 +51,13 @@ Local dev uses `http://localhost:5173` (Vite `server.host`) so the browser origi
 
 The app is a static SPA deployed with the [Cloudflare Vite plugin](https://developers.cloudflare.com/workers/vite-plugin/). Input configuration is in `wrangler.toml`; `vp build` emits client assets and an output `wrangler.json` under `dist/` for preview and deploy.
 
-After `wrangler login` (or with `CLOUDFLARE_API_TOKEN` in CI):
+After `wrangler login`:
 
 ```sh
 vp run deploy
 ```
+
+Or connect this repository in the [Cloudflare dashboard](https://dash.cloudflare.com/) and let Cloudflare build and deploy on push. Set `NODE_AUTH_TOKEN` as a build environment variable so install can fetch `@packtrans/glossary` from GitHub Packages.
 
 Requirements: Wrangler **4.102.0+** (included as a dev dependency).
 
