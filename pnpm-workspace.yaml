@@ -1,0 +1,10 @@
+overrides:
+  vite: npm:@voidzero-dev/vite-plus-core@latest
+
+allowBuilds:
+  esbuild: true
+  sharp: true
+  workerd: true
+
+minimumReleaseAgeExclude:
+  - '@packtrans/glossary@0.0.8'
