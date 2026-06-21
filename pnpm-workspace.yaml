@@ -1,6 +1,11 @@
 overrides:
   vite: npm:@voidzero-dev/vite-plus-core@latest
 
+registries:
+  '@packtrans': https://npm.pkg.github.com
+
+lockfileIncludeTarballUrl: true
+
 allowBuilds:
   esbuild: true
   sharp: true
