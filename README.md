@@ -13,19 +13,11 @@ Vite+ manages the Node.js runtime and pnpm version for this project.
 
 The WASM bindings are published to GitHub Packages as `@packtrans/glossary`. Create a GitHub personal access token with `read:packages` and authenticate before installing.
 
-pnpm v11 does not expand `${GITHUB_NPM_AUTH_TOKEN}` in a committed `.npmrc` by default. Opt in for this repository:
+pnpm v11 does not expand `${GITHUB_NPM_AUTH_TOKEN}` in a committed project `.npmrc`. Use `.npmrc.pages` instead (Cloudflare's [private registry pattern](https://developers.cloudflare.com/pages/how-to/npm-private-registry/)):
 
 ```sh
 export GITHUB_NPM_AUTH_TOKEN=ghp_...
-export PNPM_CONFIG_NPMRC_AUTH_FILE=.npmrc
-vp install
-```
-
-Alternatively, pass the token without reading `.npmrc`:
-
-```sh
-export GITHUB_NPM_AUTH_TOKEN=ghp_...
-export "pnpm_config_//npm.pkg.github.com/:_authToken=$GITHUB_NPM_AUTH_TOKEN"
+export NPM_CONFIG_USERCONFIG=.npmrc.pages
 vp install
 ```
 
@@ -68,10 +60,12 @@ After `wrangler login`:
 vp run deploy
 ```
 
-Or connect this repository in the [Cloudflare dashboard](https://dash.cloudflare.com/) and let Cloudflare build and deploy on push. Set these build environment variables so install can fetch `@packtrans/glossary` from GitHub Packages and pass pnpm v11 lockfile verification:
+Or connect this repository in the [Cloudflare dashboard](https://dash.cloudflare.com/) and let Cloudflare build and deploy on push. In **Settings → Builds → Build variables and secrets**, set:
 
-- `GITHUB_NPM_AUTH_TOKEN` (secret) — GitHub Packages read token
-- `PNPM_CONFIG_NPMRC_AUTH_FILE=.npmrc` — allows the committed `.npmrc` auth placeholder to be expanded in CI
+- `GITHUB_NPM_AUTH_TOKEN` (secret) — GitHub Packages read token with `read:packages`
+- `NPM_CONFIG_USERCONFIG=.npmrc.pages` — points pnpm at the auth file that expands `${GITHUB_NPM_AUTH_TOKEN}` during install and lockfile verification
+
+Without `NPM_CONFIG_USERCONFIG`, pnpm v11 ignores the token placeholder and fails with `ERR_PNPM_TARBALL_URL_MISMATCH` for `@packtrans/glossary`.
 
 Requirements: Wrangler **4.102.0+** (included as a dev dependency).
 
