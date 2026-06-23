@@ -21,6 +21,18 @@ export function StatusAlert({ status, error }: StatusAlertProps) {
     );
   }
 
+  if (status === "loading-dictionary") {
+    return (
+      <Alert>
+        <LoaderCircle className="animate-spin" />
+        <AlertTitle>Loading tokenizer dictionary</AlertTitle>
+        <AlertDescription>
+          Downloading the Lindera jieba dictionary for inverse `{DEMO_LANG}` queries.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   if (status === "searching") {
     return (
       <Alert>

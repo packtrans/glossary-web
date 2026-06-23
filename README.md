@@ -33,7 +33,6 @@ vp run deploy  # build and wrangler deploy
 ## TODO
 
 - [ ] Add other languages
-- [ ] Support inverse query
 
 ## Tooling notes
 
