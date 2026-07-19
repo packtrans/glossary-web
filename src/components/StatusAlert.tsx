@@ -1,21 +1,47 @@
 import { AlertCircle, LoaderCircle } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { DEMO_LANG, type GlossaryStatus } from "@/types/glossary";
+import { LANGUAGE_LABELS, type GlossaryLanguage, type GlossaryStatus } from "@/types/glossary";
 
 type StatusAlertProps = {
   status: GlossaryStatus;
   error: string | null;
+  lang: GlossaryLanguage;
 };
 
-export function StatusAlert({ status, error }: StatusAlertProps) {
+export function StatusAlert({ status, error, lang }: StatusAlertProps) {
+  if (status === "loading-metadata") {
+    return (
+      <Alert>
+        <LoaderCircle className="animate-spin" />
+        <AlertTitle>Loading glossary metadata</AlertTitle>
+        <AlertDescription>
+          Fetching index versions and language availability from the CDN.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   if (status === "loading-index") {
     return (
       <Alert>
         <LoaderCircle className="animate-spin" />
         <AlertTitle>Loading glossary index</AlertTitle>
         <AlertDescription>
-          Downloading the `{DEMO_LANG}` glossary index from CDN into WebAssembly memory.
+          Downloading the `{lang}` ({LANGUAGE_LABELS[lang]}) glossary index into WebAssembly
+          memory.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (status === "loading-dictionary") {
+    return (
+      <Alert>
+        <LoaderCircle className="animate-spin" />
+        <AlertTitle>Loading tokenizer dictionary</AlertTitle>
+        <AlertDescription>
+          Downloading the Lindera dictionary for inverse `{lang}` queries from the CDN.
         </AlertDescription>
       </Alert>
     );
