@@ -1,8 +1,4 @@
-import type {
-  GlossaryIndexEntry,
-  GlossaryLanguage,
-  GlossaryMetadata,
-} from "@/types/glossary";
+import type { GlossaryIndexEntry, GlossaryLanguage, GlossaryMetadata } from "@/types/glossary";
 import { METADATA_URL } from "@/types/glossary";
 
 export function resolveLatestIndexes(metadata: GlossaryMetadata): GlossaryIndexEntry {
@@ -10,9 +6,7 @@ export function resolveLatestIndexes(metadata: GlossaryMetadata): GlossaryIndexE
     (candidate) => candidate.version === metadata.latestIndexesVersion,
   );
   if (!entry) {
-    throw new Error(
-      `Metadata does not contain index version ${metadata.latestIndexesVersion}`,
-    );
+    throw new Error(`Metadata does not contain index version ${metadata.latestIndexesVersion}`);
   }
   return entry;
 }

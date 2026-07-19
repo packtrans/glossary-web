@@ -7,23 +7,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { LANGUAGE_LABELS, type GlossaryLanguage, type QueryHit } from "@/types/glossary";
+import type { QueryHit } from "@/types/glossary";
 
 type ResultsTableProps = {
   hits: QueryHit[];
   query: string;
-  inverse?: boolean;
-  lang: GlossaryLanguage;
 };
 
-export function ResultsTable({ hits, query, inverse = false, lang }: ResultsTableProps) {
+export function ResultsTable({ hits, query }: ResultsTableProps) {
   if (!query) {
     return null;
   }
-
-  const direction = inverse
-    ? `${lang} → English`
-    : `English → ${lang}`;
 
   return (
     <Card>
@@ -31,8 +25,8 @@ export function ResultsTable({ hits, query, inverse = false, lang }: ResultsTabl
         <CardTitle>Results</CardTitle>
         <CardDescription>
           {hits.length === 0
-            ? `No matches for "${query}" (${direction}).`
-            : `${hits.length} match${hits.length === 1 ? "" : "es"} for "${query}" (${direction}, ${LANGUAGE_LABELS[lang]}).`}
+            ? `No matches for "${query}".`
+            : `${hits.length} match${hits.length === 1 ? "" : "es"} for "${query}".`}
         </CardDescription>
       </CardHeader>
       <CardContent className="overflow-x-auto">

@@ -24,6 +24,7 @@ export function useGlossarySearch() {
   const forwardIndexRef = useRef<GlossaryIndex | null>(null);
   const inverseIndexRef = useRef<GlossaryIndex | null>(null);
   const inverseLoadingRef = useRef<Promise<void> | null>(null);
+  const inverseWantedRef = useRef(false);
   const wasmRef = useRef<WasmModule | null>(null);
   const langRef = useRef<GlossaryLanguage>(DEFAULT_LANG);
 
@@ -44,6 +45,74 @@ export function useGlossarySearch() {
     indexBytesRef.current = null;
   }, []);
 
+  const ensureInverseIndex = useCallback(async () => {
+    if (inverseIndexRef.current) {
+      return;
+    }
+
+    if (inverseLoadingRef.current) {
+      await inverseLoadingRef.current;
+      return;
+    }
+
+    const wasm = wasmRef.current;
+    const indexBytes = indexBytesRef.current;
+    const currentLang = langRef.current;
+    if (!wasm || !indexBytes) {
+      throw new Error("Glossary index is not ready yet.");
+    }
+
+    const dictName = targetDictName(currentLang);
+    if (!dictName) {
+      throw new Error(`Inverse query is not supported for language ${currentLang}.`);
+    }
+
+    const loadPromise = (async () => {
+      setStatus("loading-dictionary");
+      setError(null);
+
+      const version = wasm.lindera_version();
+      const response = await fetch(dictCdnUrl(dictName, version));
+      if (!response.ok) {
+        throw new Error(`Failed to load dictionary (${response.status})`);
+      }
+
+      const dictBytes = new Uint8Array(await response.arrayBuffer());
+      inverseIndexRef.current = new wasm.GlossaryIndex(indexBytes, currentLang, dictBytes);
+      setStatus("ready");
+    })();
+
+    inverseLoadingRef.current = loadPromise;
+
+    try {
+      await loadPromise;
+    } finally {
+      inverseLoadingRef.current = null;
+    }
+  }, []);
+
+  const prefetchInverse = useCallback(() => {
+    if (inverseIndexRef.current || inverseLoadingRef.current) {
+      return;
+    }
+
+    // The forward index must be loaded before we can build the inverse index.
+    // If it is not ready yet (e.g. during a language switch), `loadIndexForLang`
+    // will re-trigger this once the new forward index is available.
+    if (!indexBytesRef.current) {
+      return;
+    }
+
+    if (!targetDictName(langRef.current)) {
+      return;
+    }
+
+    void ensureInverseIndex().catch((loadError) => {
+      setStatus("ready");
+      setError(loadError instanceof Error ? loadError.message : String(loadError));
+    });
+  }, [ensureInverseIndex]);
+
   const loadIndexForLang = useCallback(
     async (targetLang: GlossaryLanguage, metadata: GlossaryMetadata) => {
       const wasm = wasmRef.current;
@@ -53,6 +122,9 @@ export function useGlossarySearch() {
 
       setStatus("loading-index");
       setError(null);
+      setHits([]);
+      setLastQuery("");
+      setLastInverse(false);
       resetIndexes();
 
       const indexUrl = getIndexUrl(metadata, targetLang);
@@ -69,8 +141,18 @@ export function useGlossarySearch() {
       langRef.current = targetLang;
       setLangState(targetLang);
       setStatus("ready");
+
+      // If the user had the inverse index loaded (or wanted it) for the
+      // previous language, transparently rebuild it for the new language now
+      // that the forward index is ready.
+      if (inverseWantedRef.current && targetDictName(targetLang)) {
+        void ensureInverseIndex().catch((loadError) => {
+          setStatus("ready");
+          setError(loadError instanceof Error ? loadError.message : String(loadError));
+        });
+      }
     },
-    [resetIndexes],
+    [ensureInverseIndex, resetIndexes],
   );
 
   useEffect(() => {
@@ -131,66 +213,24 @@ export function useGlossarySearch() {
     [loadIndexForLang],
   );
 
-  const ensureInverseIndex = useCallback(async () => {
-    if (inverseIndexRef.current) {
-      return;
-    }
-
-    if (inverseLoadingRef.current) {
-      await inverseLoadingRef.current;
-      return;
-    }
-
-    const wasm = wasmRef.current;
-    const indexBytes = indexBytesRef.current;
-    const currentLang = langRef.current;
-    if (!wasm || !indexBytes) {
-      throw new Error("Glossary index is not ready yet.");
-    }
-
-    const dictName = targetDictName(currentLang);
-    if (!dictName) {
-      throw new Error(`Inverse query is not supported for language ${currentLang}.`);
-    }
-
-    const loadPromise = (async () => {
-      setStatus("loading-dictionary");
-      setError(null);
-
-      const version = wasm.lindera_version();
-      const response = await fetch(dictCdnUrl(dictName, version));
-      if (!response.ok) {
-        throw new Error(`Failed to load dictionary (${response.status})`);
+  const setInverseEnabled = useCallback(
+    (enabled: boolean) => {
+      if (inverseWantedRef.current === enabled) {
+        return;
       }
-
-      const dictBytes = new Uint8Array(await response.arrayBuffer());
-      inverseIndexRef.current = new wasm.GlossaryIndex(indexBytes, currentLang, dictBytes);
-      setStatus("ready");
-    })();
-
-    inverseLoadingRef.current = loadPromise;
-
-    try {
-      await loadPromise;
-    } finally {
-      inverseLoadingRef.current = null;
-    }
-  }, []);
-
-  const prefetchInverse = useCallback(() => {
-    if (inverseIndexRef.current || inverseLoadingRef.current) {
-      return;
-    }
-
-    if (!targetDictName(langRef.current)) {
-      return;
-    }
-
-    void ensureInverseIndex().catch((loadError) => {
-      setStatus("ready");
-      setError(loadError instanceof Error ? loadError.message : String(loadError));
-    });
-  }, [ensureInverseIndex]);
+      inverseWantedRef.current = enabled;
+      // Toggling the query direction invalidates the previous results; clear
+      // them so stale hits from the other mode don't stay on screen.
+      setHits([]);
+      setLastQuery("");
+      setLastInverse(false);
+      setError(null);
+      if (enabled) {
+        prefetchInverse();
+      }
+    },
+    [prefetchInverse],
+  );
 
   const search = useCallback(
     async (query: string, limit: number, inverse: boolean) => {
@@ -217,6 +257,7 @@ export function useGlossarySearch() {
       setError(null);
       setLastQuery(trimmed);
       setLastInverse(inverse);
+      inverseWantedRef.current = inverse || inverseWantedRef.current;
 
       try {
         const index = inverse
@@ -251,7 +292,7 @@ export function useGlossarySearch() {
     lang,
     availableLanguages,
     setLang,
+    setInverseEnabled,
     search,
-    prefetchInverse,
   };
 }

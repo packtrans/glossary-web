@@ -1,11 +1,19 @@
-import { useState } from "react";
 import { Search } from "lucide-react";
-
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { targetDictName } from "@/lib/glossaryMetadata";
-import { LANGUAGE_LABELS, type GlossaryLanguage } from "@/types/glossary";
+import { type GlossaryLanguage, LANGUAGE_LABELS } from "@/types/glossary";
 
 type SearchFormProps = {
   disabled?: boolean;
@@ -57,8 +65,8 @@ export function SearchForm({
         <CardTitle>Search glossary</CardTitle>
         <CardDescription>
           {inverse
-            ? `${LANGUAGE_LABELS[lang]} (\`${lang}\`) text to English translations.`
-            : `English source text to ${LANGUAGE_LABELS[lang]} (\`${lang}\`) translations.`}
+            ? `${LANGUAGE_LABELS[lang]} (${lang}) text to English translations.`
+            : `English source text to ${LANGUAGE_LABELS[lang]} (${lang}) translations.`}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -74,57 +82,52 @@ export function SearchForm({
           }}
         >
           <div className="grid gap-2 sm:max-w-xs">
-            <label className="text-sm font-medium" htmlFor="lang">
-              Target language
-            </label>
-            <select
-              id="lang"
-              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+            <Label htmlFor="lang">Target language</Label>
+            <Select
               value={lang}
               disabled={disabled}
-              onChange={(event) => {
-                const nextLang = event.target.value as GlossaryLanguage;
-                onLangChange(nextLang);
-                setQuery(inverse ? INVERSE_EXAMPLES[nextLang] : FORWARD_EXAMPLES[nextLang]);
-                if (!targetDictName(nextLang) && inverse) {
+              onValueChange={(nextLang) => {
+                const next = nextLang as GlossaryLanguage;
+                onLangChange(next);
+                setQuery(inverse ? INVERSE_EXAMPLES[next] : FORWARD_EXAMPLES[next]);
+                if (!targetDictName(next) && inverse) {
                   setInverse(false);
                   onInverseChange?.(false);
-                } else if (inverse) {
-                  onInverseChange?.(true);
                 }
               }}
             >
-              {availableLanguages.map((code) => (
-                <option key={code} value={code}>
-                  {LANGUAGE_LABELS[code]} ({code})
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="lang" type="button" className="w-full">
+                <SelectValue>{`${LANGUAGE_LABELS[lang]} (${lang})`}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {availableLanguages.map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {`${LANGUAGE_LABELS[code]} (${code})`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {supportsInverse ? (
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                className="size-4 rounded border border-input accent-primary"
+            <Label htmlFor="inverse" className="font-normal">
+              <Checkbox
+                id="inverse"
                 checked={inverse}
                 disabled={disabled}
-                onChange={(event) => {
-                  const nextInverse = event.target.checked;
-                  setInverse(nextInverse);
-                  setQuery(nextInverse ? INVERSE_EXAMPLES[lang] : FORWARD_EXAMPLES[lang]);
-                  onInverseChange?.(nextInverse);
+                onCheckedChange={(next) => {
+                  setInverse(next);
+                  setQuery(next ? INVERSE_EXAMPLES[lang] : FORWARD_EXAMPLES[lang]);
+                  onInverseChange?.(next);
                 }}
               />
               Inverse query (search by target language)
-            </label>
+            </Label>
           ) : null}
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             <div className="grid flex-1 gap-2">
-              <label className="text-sm font-medium" htmlFor="query">
-                Query
-              </label>
+              <Label htmlFor="query">Query</Label>
               <Input
                 id="query"
                 placeholder={
@@ -136,9 +139,7 @@ export function SearchForm({
               />
             </div>
             <div className="grid w-full gap-2 sm:w-28">
-              <label className="text-sm font-medium" htmlFor="limit">
-                Limit
-              </label>
+              <Label htmlFor="limit">Limit</Label>
               <Input
                 id="limit"
                 type="number"
